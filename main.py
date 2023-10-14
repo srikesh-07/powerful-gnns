@@ -2,6 +2,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import networkx as nx
 import torch.optim as optim
 import numpy as np
 import random
@@ -123,7 +124,7 @@ def main():
                         help='input batch size for training (default: 32)')
     parser.add_argument('--iters_per_epoch', type=int, default=50,
                         help='number of iterations per each epoch (default: 50)')
-    parser.add_argument('--epochs', type=int, default=350,
+    parser.add_argument('--epochs', type=int, default=100,
                         help='number of epochs to train (default: 350)')
     parser.add_argument('--lr', type=float, default=0.01,
                         help='learning rate (default: 0.01)')
@@ -152,11 +153,11 @@ def main():
     args = parser.parse_args()
 
     #set up seeds and gpu device
-    torch.manual_seed(0)
-    np.random.seed(0)    
-    device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(0)
+    # torch.manual_seed(0)
+    # np.random.seed(0)
+    # device = torch.device("cuda:" + str(args.device)) if torch.cuda.is_available() else torch.device("cpu")
+    # if torch.cuda.is_available():
+    #     torch.cuda.manual_seed_all(0)
 
     graphs, num_classes = load_data(args.dataset, args.degree_as_tag)
 
@@ -214,7 +215,7 @@ def main():
         graphs[i].nodegroup = 0
 
     ##10-fold cross validation. Conduct an experiment on the fold specified by args.fold_idx.
-    train_graphs, valid_graphs, test_graphs = data_split(graphs, seed=args.seed)
+    train_graphs, valid_graphs, test_graphs = data_split(graphs)
 
 
     times = 5
@@ -253,7 +254,7 @@ def main():
                 best_valid_acc = acc_valid
                 # best_valid_loss = loss_valid
                 patience = 0
-                loss, test_acc, test_acc_head, test_acc_medium, test_acc_tail = test_gin(args, model, device, test_graphs,
+                test_acc, test_acc_head, test_acc_medium, test_acc_tail = test_gin(args, model, device, test_graphs,
                                                                                          epoch)
                 print("test acc: %.4f" % test_acc)
                 print("test acc_head: %.4f" % test_acc_head)
